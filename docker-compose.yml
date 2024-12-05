@@ -1,0 +1,10 @@
+services:
+  elicelab_db:
+    container_name: elicelab_db
+    image: postgres:latest
+    env_file:
+      - .env
+    restart: always
+    ports:
+      - "5432:5432"
+
