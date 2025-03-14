@@ -62,12 +62,20 @@ export class ProductService {
     id: string,
     updateProductDto: UpdateProductDto,
   ): Promise<string> {
-    const updateResponse = await this.productRepository.update(
-      id,
-      updateProductDto,
-    );
-    if (!updateResponse.affected)
+    const existingProduct = await this.productRepository.findOneBy({ id });
+
+    if (!existingProduct) {
       throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
+    }
+
+    // Merge existing data with new data
+    const updatedProduct = {
+      ...existingProduct,
+      ...updateProductDto,
+    };
+
+    await this.productRepository.save(updatedProduct);
+
     return 'updated';
   }
 }

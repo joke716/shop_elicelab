@@ -1,6 +1,12 @@
-import { Column, Entity, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
+  OneToMany,
+} from 'typeorm';
 import { BaseEntity } from '../../common/base.entity';
-import { Category } from '../../category/entities/category.entity';
 import { Comment } from '../../comment/entities/comment.entity';
 
 @Entity()
@@ -17,12 +23,13 @@ export class Product extends BaseEntity {
   @Column()
   productImg: string;
 
-  // @ManyToOne(() => Category, (category: Category) => category.products)
-  // public category: Category;
+  // ✅ 단순 문자열 배열로 저장 (CSV 형식)
+  @Column('simple-array')
+  public categories: string[];
 
-  @ManyToMany(() => Category, (category: Category) => category.products)
-  public categories: Category[];
-
-  @OneToMany(() => Comment, (comment: Comment) => comment.product)
+  @OneToMany(() => Comment, (comment) => comment.product, {
+    eager: true,
+    cascade: true,
+  })
   public comments: Comment[];
 }

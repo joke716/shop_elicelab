@@ -7,6 +7,8 @@ export class Comment extends BaseEntity {
   @Column()
   public content: string;
 
-  @ManyToOne(() => Product, (product: Product) => product.comments)
+  @ManyToOne(() => Product, (product: Product) => product.comments, {
+    eager: false,
+  })
   public product: Product;
 }
