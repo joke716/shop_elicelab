@@ -8,6 +8,7 @@ import { Provider } from '../common/enums/provider.enum';
 import { LoginUserDto } from '../user/dto/login-user.dto';
 import { TokenPayloadInterface } from './interfaces/tokenPayload.interface';
 import { JwtService } from '@nestjs/jwt';
+import EmailService from '../email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +16,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
+    private readonly emailService: EmailService,
   ) {}
 
   public async registerUser(createUserDto: CreateUserDto): Promise<User> {
@@ -57,40 +59,97 @@ export class AuthService {
     return member;
   }
 
-  public generateAccessToken(userId: string): {
-    accessToken: string;
-    accessCookie: string;
+  // public generateAccessToken(userId: string): {
+  //   accessToken: string;
+  //   accessCookie: string;
+  // } {
+  //   const payload: TokenPayloadInterface = { userId };
+  //   const accessToken = this.jwtService.sign(payload, {
+  //     secret: this.configService.get('ACCESS_TOKEN_SECRET'),
+  //     expiresIn: `${this.configService.get('ACCESS_TOKEN_EXPIRATION_TIME')}`,
+  //   });
+  //   // const cookie = `Refresh=${token}; HttpOnly; Path=/; Max-Age=${this.configService.get(
+  //   //   'REFRESH_TOKEN_EXPIRATION_TIME',
+  //   // )}`;
+  //   const accessCookie = `Authentication=${accessToken}; Path=/; Max-Age=${this.configService.get('ACCESS_TOKEN_EXPIRATION_TIME')}`;
+  //   return {
+  //     accessToken,
+  //     accessCookie,
+  //   };
+  // }
+  //
+  // public generateRefreshToken(userId: string): {
+  //   refreshCookie: string;
+  //   refreshToken: string;
+  // } {
+  //   const payload: TokenPayloadInterface = { userId };
+  //   const refreshToken = this.jwtService.sign(payload, {
+  //     secret: this.configService.get('REFRESH_TOKEN_SECRET'),
+  //     expiresIn: `${this.configService.get('REFRESH_TOKEN_EXPIRATION_TIME')}`,
+  //   });
+  //   const refreshCookie = `Refresh=${refreshToken}; Path=/; Max-Age=${this.configService.get(
+  //     'REFRESH_TOKEN_EXPIRATION_TIME',
+  //   )}`;
+  //   return {
+  //     refreshToken,
+  //     refreshCookie,
+  //   };
+  // }
+
+  public generateToken(
+    userId: string,
+    tokenType: 'access' | 'refresh',
+  ): {
+    token: string;
+    cookie: string;
   } {
     const payload: TokenPayloadInterface = { userId };
-    const accessToken = this.jwtService.sign(payload, {
-      secret: this.configService.get('ACCESS_TOKEN_SECRET'),
-      expiresIn: `${this.configService.get('ACCESS_TOKEN_EXPIRATION_TIME')}`,
+
+    const secretKey = this.configService.get(
+      tokenType === 'access' ? 'ACCESS_TOKEN_SECRET' : 'REFRESH_TOKEN_SECRET',
+    );
+    const expirationTime = this.configService.get(
+      tokenType === 'access'
+        ? 'ACCESS_TOKEN_EXPIRATION_TIME'
+        : 'REFRESH_TOKEN_EXPIRATION_TIME',
+    );
+
+    const token = this.jwtService.sign(payload, {
+      secret: secretKey,
+      expiresIn: `${expirationTime}`,
     });
-    // const cookie = `Refresh=${token}; HttpOnly; Path=/; Max-Age=${this.configService.get(
-    //   'REFRESH_TOKEN_EXPIRATION_TIME',
-    // )}`;
-    const accessCookie = `Authentication=${accessToken}; Path=/; Max-Age=${this.configService.get('ACCESS_TOKEN_EXPIRATION_TIME')}`;
+
+    const cookieName = tokenType === 'access' ? 'Authentication' : 'Refresh';
+    const cookie = `${cookieName}=${token}; Path=/; Max-Age=${expirationTime}`;
+
     return {
-      accessToken,
-      accessCookie,
+      token,
+      cookie,
     };
   }
 
-  public generateRefreshToken(userId: string): {
-    refreshCookie: string;
-    refreshToken: string;
-  } {
-    const payload: TokenPayloadInterface = { userId };
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get('REFRESH_TOKEN_SECRET'),
-      expiresIn: `${this.configService.get('REFRESH_TOKEN_EXPIRATION_TIME')}`,
+  public getCookiesForLogOut(): string[] {
+    return [
+      'Authentication=; HttpOnly; Path=/; Max-Age=0',
+      'Refresh=; HttpOnly; Path=/; Max-Age=0',
+    ];
+  }
+
+  async initiateEmailAddressVerification(email: string): Promise<void> {
+    const generateNumber = this.generateOTP();
+    // await this.cacheManager.set(email, generateNumber);
+    return await this.emailService.sendMail({
+      to: email,
+      subject: 'BeeCouple - Verification Email Address',
+      html: `<h1>${generateNumber}</h1>`,
     });
-    const refreshCookie = `Refresh=${refreshToken}; Path=/; Max-Age=${this.configService.get(
-      'REFRESH_TOKEN_EXPIRATION_TIME',
-    )}`;
-    return {
-      refreshToken,
-      refreshCookie,
-    };
+  }
+
+  generateOTP() {
+    let OTP = '';
+    for (let i = 1; i <= 6; i++) {
+      OTP += Math.floor(Math.random() * 10);
+    }
+    return OTP;
   }
 }

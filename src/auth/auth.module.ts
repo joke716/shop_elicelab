@@ -6,9 +6,10 @@ import { ConfigModule } from '@nestjs/config';
 import { LocalStrategy } from './strategies /local-auth.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { AccessTokenStrategy } from './strategies /access-token.strategy';
+import { EmailModule } from '../email/email.module';
 
 @Module({
-  imports: [ConfigModule, JwtModule.register({}), UserModule],
+  imports: [ConfigModule, JwtModule.register({}), UserModule, EmailModule],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, AccessTokenStrategy],
 })
