@@ -20,6 +20,9 @@ services:
     container_name: elicelab_backend
     env_file:
       - .env
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
     command: npm run start:dev
     ports:
       - "7070:7070"
