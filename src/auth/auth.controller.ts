@@ -20,6 +20,7 @@ import { AccessTokenGuard } from './guards/accessToken.guard';
 import { TokenType } from '../common/enums/tokenType.enum';
 import { Response } from 'express';
 import { EmailDto } from '../user/dto/email.dto';
+import { EmailVerificationDto } from '../user/dto/email-verification.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -103,6 +104,22 @@ export class AuthController {
   ): Promise<void> {
     return await this.authService.initiateEmailAddressVerification(
       emailDto.email,
+    );
+  }
+
+  @Post('/email/check')
+  @ApiBody({ type: EmailVerificationDto })
+  @ApiResponse({ status: 200, description: 'Check Email of Verification' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiOperation({
+    summary: 'Verifiy Email',
+    description: 'Verifiy Email',
+  })
+  async checkEmail(
+    @Body() emailVerificationDto: EmailVerificationDto,
+  ): Promise<any> {
+    return await this.authService.confirmEmailVerification(
+      emailVerificationDto,
     );
   }
 }

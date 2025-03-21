@@ -42,6 +42,16 @@ services:
     networks:
       - elicelab-network
 
+  elicelab_redis:
+    container_name: elicelab_redis
+    image: "redis:alpine"
+    env_file:
+      - .env
+    ports:
+      - "6379:6379"
+    networks:
+      - elicelab-network
+
 networks:
   elicelab-network:
     driver: bridge

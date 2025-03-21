@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { ConfigService } from '@nestjs/config';
 import { CreateUserDto } from '../user/dto/create-user.dto';
@@ -9,6 +15,9 @@ import { LoginUserDto } from '../user/dto/login-user.dto';
 import { TokenPayloadInterface } from './interfaces/tokenPayload.interface';
 import { JwtService } from '@nestjs/jwt';
 import EmailService from '../email/email.service';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/common/cache';
+import { EmailVerificationDto } from '../user/dto/email-verification.dto';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +26,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   public async registerUser(createUserDto: CreateUserDto): Promise<User> {
@@ -137,7 +147,7 @@ export class AuthService {
 
   async initiateEmailAddressVerification(email: string): Promise<void> {
     const generateNumber = this.generateOTP();
-    // await this.cacheManager.set(email, generateNumber);
+    await this.cacheManager.set(email, generateNumber);
     return await this.emailService.sendMail({
       to: email,
       subject: 'BeeCouple - Verification Email Address',
@@ -151,5 +161,17 @@ export class AuthService {
       OTP += Math.floor(Math.random() * 10);
     }
     return OTP;
+  }
+
+  async confirmEmailVerification(
+    emailVerificationDto: EmailVerificationDto,
+  ): Promise<boolean> {
+    const { email, code } = emailVerificationDto;
+    const emailCodeByRedis = await this.cacheManager.get(email);
+    if (emailCodeByRedis !== code) {
+      throw new BadRequestException('Wrong code provided');
+    }
+    await this.cacheManager.del(email);
+    return true;
   }
 }
