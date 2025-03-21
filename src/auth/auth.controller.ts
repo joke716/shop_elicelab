@@ -21,10 +21,15 @@ import { TokenType } from '../common/enums/tokenType.enum';
 import { Response } from 'express';
 import { EmailDto } from '../user/dto/email.dto';
 import { EmailVerificationDto } from '../user/dto/email-verification.dto';
+import { RefreshTokenGuard } from './guards/refreshToken.guard';
+import { UserService } from '../user/user.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly userService: UserService,
+  ) {}
 
   @Post('/signup')
   @ApiOperation({ summary: 'User Signup', description: 'User Signup' })
@@ -59,6 +64,8 @@ export class AuthController {
     const { token: refreshToken, cookie: refreshTokenCookie } =
       await this.authService.generateToken(user.id, TokenType.REFRESH);
 
+    await this.userService.setCurrentRefreshTokenToRedis(refreshToken, user.id);
+
     user.password = undefined;
     req.res.setHeader('Set-Cookie', [accessTokenCookie, refreshTokenCookie]);
 
@@ -76,6 +83,25 @@ export class AuthController {
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'forbidden' })
   async authenticate(@Req() req: RequestWithUser): Promise<User> {
     return await req.user;
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(RefreshTokenGuard)
+  @Get('/refresh')
+  @ApiResponse({ status: HttpStatus.OK, description: 'Refresh success' })
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'forbidden' })
+  @ApiOperation({
+    summary: 'Refresh',
+    description: 'Refresh',
+  })
+  async refresh(@Req() req: RequestWithUser): Promise<User> {
+    const { user } = req;
+    const { cookie: accessTokenCookie } = await this.authService.generateToken(
+      user.id,
+      TokenType.ACCESS,
+    );
+    req.res.setHeader('Set-Cookie', accessTokenCookie);
+    return user;
   }
 
   @UseGuards(AccessTokenGuard)
