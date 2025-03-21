@@ -5,6 +5,7 @@ import { CreateUserDto } from '../user/dto/create-user.dto';
 import { User } from '../user/entities/user.entity';
 import { PostgresErrorCode } from '../database/postgresErrorCodes.enum';
 import { Provider } from '../common/enums/provider.enum';
+import { LoginUserDto } from '../user/dto/login-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -13,7 +14,7 @@ export class AuthService {
     private readonly userService: UserService,
   ) {}
 
-  public async registerMember(createUserDto: CreateUserDto): Promise<User> {
+  public async registerUser(createUserDto: CreateUserDto): Promise<User> {
     try {
       return await this.userService.createUser({
         ...createUserDto,
@@ -38,5 +39,18 @@ export class AuthService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  public async getAuthenticatedUser(loginUserDto: LoginUserDto): Promise<User> {
+    const { email, password } = loginUserDto;
+    const member = await this.userService.getUserBy('email', email);
+    const isPasswordMatched = await member.checkPassword(password);
+    if (!isPasswordMatched) {
+      throw new HttpException(
+        'Wrong credentials provided',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return member;
   }
 }
