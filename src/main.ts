@@ -5,12 +5,14 @@ import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { setupSwagger } from './config/swagger.document';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService: ConfigService = app.get(ConfigService);
 
   app.setGlobalPrefix('api');
+  app.use(cookieParser());
 
   // CORS 설정 (필요 시 추가)
   app.enableCors({

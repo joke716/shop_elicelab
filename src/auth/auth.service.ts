@@ -6,12 +6,15 @@ import { User } from '../user/entities/user.entity';
 import { PostgresErrorCode } from '../database/postgresErrorCodes.enum';
 import { Provider } from '../common/enums/provider.enum';
 import { LoginUserDto } from '../user/dto/login-user.dto';
+import { TokenPayloadInterface } from './interfaces/tokenPayload.interface';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly configService: ConfigService,
     private readonly userService: UserService,
+    private readonly jwtService: JwtService,
   ) {}
 
   public async registerUser(createUserDto: CreateUserDto): Promise<User> {
@@ -52,5 +55,42 @@ export class AuthService {
       );
     }
     return member;
+  }
+
+  public generateAccessToken(userId: string): {
+    accessToken: string;
+    accessCookie: string;
+  } {
+    const payload: TokenPayloadInterface = { userId };
+    const accessToken = this.jwtService.sign(payload, {
+      secret: this.configService.get('ACCESS_TOKEN_SECRET'),
+      expiresIn: `${this.configService.get('ACCESS_TOKEN_EXPIRATION_TIME')}`,
+    });
+    // const cookie = `Refresh=${token}; HttpOnly; Path=/; Max-Age=${this.configService.get(
+    //   'REFRESH_TOKEN_EXPIRATION_TIME',
+    // )}`;
+    const accessCookie = `Authentication=${accessToken}; Path=/; Max-Age=${this.configService.get('ACCESS_TOKEN_EXPIRATION_TIME')}`;
+    return {
+      accessToken,
+      accessCookie,
+    };
+  }
+
+  public generateRefreshToken(userId: string): {
+    refreshCookie: string;
+    refreshToken: string;
+  } {
+    const payload: TokenPayloadInterface = { userId };
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: this.configService.get('REFRESH_TOKEN_SECRET'),
+      expiresIn: `${this.configService.get('REFRESH_TOKEN_EXPIRATION_TIME')}`,
+    });
+    const refreshCookie = `Refresh=${refreshToken}; Path=/; Max-Age=${this.configService.get(
+      'REFRESH_TOKEN_EXPIRATION_TIME',
+    )}`;
+    return {
+      refreshToken,
+      refreshCookie,
+    };
   }
 }
