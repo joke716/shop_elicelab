@@ -1,28 +1,22 @@
-import { PartialType } from '@nestjs/mapped-types';
+import { PartialType } from '@nestjs/swagger';
 import { CreateProductDto } from './create-product.dto';
 import { ApiProperty } from '@nestjs/swagger';
+import { Category } from '../entities/category.enum';
+import { IsArray, IsEnum, ArrayNotEmpty } from 'class-validator';
 
 export class UpdateProductDto extends PartialType(CreateProductDto) {
-  @ApiProperty({ example: 'iPhone 16 Ultra', required: false })
-  name?: string;
-
-  @ApiProperty({ example: 'Updated description', required: false })
-  description?: string;
-
-  @ApiProperty({ example: 1700000, required: false })
-  price?: number;
-
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsEnum(Category, { each: true })
   @ApiProperty({
-    example: 'https://example.com/new-product-image.jpg',
-    required: false,
-  })
-  productImg?: string;
-
-  @ApiProperty({
+    description: '수정할 상품 카테고리 배열',
     type: 'array',
-    items: { type: 'string' },
-    example: ['Tablets', 'Tech'],
+    items: {
+      type: 'string',
+      enum: Object.values(Category),
+    },
+    example: ['COMPUTER', 'ELECTRONICS'],
     required: false,
   })
-  categories?: string[];
+  categories: Category[];
 }

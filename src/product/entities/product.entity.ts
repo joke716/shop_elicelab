@@ -1,13 +1,7 @@
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  JoinTable,
-  ManyToMany,
-  OneToMany,
-} from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../common/base.entity';
 import { Comment } from '../../comment/entities/comment.entity';
+import { Category } from './category.enum';
 
 @Entity()
 export class Product extends BaseEntity {
@@ -23,9 +17,12 @@ export class Product extends BaseEntity {
   @Column()
   productImg: string;
 
-  // ✅ 단순 문자열 배열로 저장 (CSV 형식)
-  @Column('simple-array')
-  public categories: string[];
+  @Column({
+    type: 'enum',
+    enum: Category,
+    array: true,
+  })
+  public categories: Category[];
 
   @OneToMany(() => Comment, (comment) => comment.product, {
     eager: true,

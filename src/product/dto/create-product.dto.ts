@@ -1,5 +1,13 @@
-import { IsArray, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Category } from '../entities/category.enum';
 
 export class CreateProductDto {
   @IsString()
@@ -26,11 +34,16 @@ export class CreateProductDto {
   productImg: string;
 
   @IsArray()
-  @IsNotEmpty()
+  @ArrayNotEmpty()
+  @IsEnum(Category, { each: true })
   @ApiProperty({
+    description: 'Product categories',
     type: 'array',
-    items: { type: 'string' }, // Swagger에서 올바르게 인식되도록 수정
-    example: ['Electronics', 'Smartphones', 'Apple'],
+    items: {
+      type: 'string',
+      enum: Object.values(Category), // ✨ 여기 수정
+    },
+    example: ['SMARTPHONE', 'ELECTRONICS'],
   })
-  categories: string[];
+  categories: Category[];
 }
