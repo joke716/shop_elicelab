@@ -23,6 +23,7 @@ import { EmailDto } from '../user/dto/email.dto';
 import { EmailVerificationDto } from '../user/dto/email-verification.dto';
 import { RefreshTokenGuard } from './guards/refreshToken.guard';
 import { UserService } from '../user/user.service';
+import { GoogleAuthGuard } from './guards/googleAuth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -147,5 +148,20 @@ export class AuthController {
     return await this.authService.confirmEmailVerification(
       emailVerificationDto,
     );
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/google')
+  @UseGuards(GoogleAuthGuard)
+  async googleLogin(): Promise<any> {
+    return HttpStatus.OK;
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/google/callback')
+  @UseGuards(GoogleAuthGuard)
+  async googleLoginCallback(@Req() req: RequestWithUser): Promise<any> {
+    const { user } = req;
+    return user;
   }
 }
