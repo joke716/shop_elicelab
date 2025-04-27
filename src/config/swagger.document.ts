@@ -5,7 +5,7 @@ export const setupSwagger = (app: INestApplication) => {
   const config = new DocumentBuilder()
     .setTitle('Elicelab OPEN API')
     .setDescription('Elicelab OPEN API')
-    .addCookieAuth('Authentication')
+    .addBearerAuth()
     .setVersion('1.0')
     .addTag('elice', 'elicelab')
     .build();
